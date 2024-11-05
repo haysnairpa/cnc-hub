@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Link } from 'react-router-dom'
 
 export function CncCard({ cnc }) {
   return (
@@ -40,9 +41,11 @@ export function CncCard({ cnc }) {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => window.location.href = `/cnc/${cnc.id}`}
+            asChild
           >
-            View Details →
+            <Link to={`/cnc/${cnc.id}`}>
+              View Details →
+            </Link>
           </Button>
         </div>
       </div>
