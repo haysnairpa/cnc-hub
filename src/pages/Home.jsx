@@ -5,6 +5,7 @@ import { WavyBackground } from "@/components/ui/wavy-background"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowDown } from "lucide-react"
+import { useState } from "react"
 import bwf from "@/assets/bwf.png"
 
 const DUMMY_CNCS = [
@@ -47,6 +48,16 @@ const DUMMY_CNCS = [
 ]
 
 export default function Home() {
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  const filteredCncs = DUMMY_CNCS.filter(cnc => {
+    const matchesSearch = cnc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         cnc.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !selectedCategory || cnc.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const scrollToContent = () => {
     window.scrollTo({
@@ -96,7 +107,10 @@ export default function Home() {
       <main className="flex-1">
         <div className="container mx-auto px-4 py-16 space-y-16 max-w-[1600px]">
           {/* Search Section */}
-          <SearchBar />
+          <SearchBar 
+            onSearch={setSearchQuery}
+            onCategoryChange={setSelectedCategory}
+          />
 
           {/* CnC Cards */}
           <motion.div
@@ -106,7 +120,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
-            {DUMMY_CNCS.map((cnc) => (
+            {filteredCncs.map((cnc) => (
               <CncCard key={cnc.id} cnc={cnc} />
             ))}
           </motion.div>
