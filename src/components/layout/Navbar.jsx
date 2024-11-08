@@ -2,9 +2,11 @@ import { Link } from "react-router-dom"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/components/contexts/AuthContext"
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const { user, userData } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,6 +16,8 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const profileLink = userData?.role === "admin" ? "/admin" : "/profile";
 
   return (
     <nav
@@ -28,7 +32,7 @@ export function Navbar() {
         <Link to="/" className="font-bold text-xl">
           CnC Hub
         </Link>
-        <AuthModal />
+        <AuthModal profileLink={profileLink} />
       </div>
     </nav>
   )

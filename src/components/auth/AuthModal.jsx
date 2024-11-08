@@ -11,7 +11,7 @@ import { User, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function AuthModal() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, userData } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,6 +36,7 @@ export function AuthModal() {
           fullName,
           studentId,
           email,
+          role: "user",
           createdAt: new Date().toISOString()
         });
       } else {
@@ -51,7 +52,7 @@ export function AuthModal() {
     return (
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/profile">
+          <Link to={userData?.role === "admin" ? "/admin" : "/profile"}>
             <User className="h-5 w-5" />
           </Link>
         </Button>
