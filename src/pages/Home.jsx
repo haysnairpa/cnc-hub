@@ -5,8 +5,9 @@ import { WavyBackground } from "@/components/ui/wavy-background"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowDown } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import bwf from "@/assets/bwf.png"
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const DUMMY_CNCS = [
   {
@@ -51,6 +52,19 @@ export default function Home() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const recommendedCategory = searchParams.get('recommended')
+
+  useEffect(() => {
+    if (recommendedCategory) {
+      setSelectedCategory(recommendedCategory)
+      window.scrollTo({
+        top: window.innerHeight,
+        behavior: "smooth"
+      })
+    }
+  }, [recommendedCategory])
 
   const filteredCncs = DUMMY_CNCS.filter(cnc => {
     const matchesSearch = cnc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -60,10 +74,7 @@ export default function Home() {
   });
 
   const scrollToContent = () => {
-    window.scrollTo({
-      top: window.innerHeight,
-      behavior: "smooth"
-    })
+    navigate('/quiz')
   }
 
   return (

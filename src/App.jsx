@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/contexts/AuthContext'
 import { PrivateRoute } from '@/components/auth/PrivateRoute'
 import AdminDashboard from './pages/Admin'
 import Profile from './pages/Profile'
+import Quiz from './pages/Quiz'
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
             </PrivateRoute>
           } 
         />
+        <Route path="/quiz" element={<Quiz />} />
       </Routes>
     </AuthProvider>
   )
