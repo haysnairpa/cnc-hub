@@ -12,12 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, Pencil, User as UserIcon, X } from "lucide-react";
 import { useAuth } from "@/components/contexts/AuthContext";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db, storage } from "@/config/firebase";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 export default function Profile() {
 	const { userData, user: userAuth, getUserData } = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
 
-	// Mock user data
 	const [user, setUser] = useState({
 		fullName: "",
 		email: "",
@@ -28,23 +30,23 @@ export default function Profile() {
 
 	const setProfileData = () => {
 		if (userData) {
-			setUser({
+			const updatedUser = {
 				fullName: userData.fullName,
 				email: userData.email,
 				studentId: userData.studentId,
 				profileImage: userData.profileImage
 					? userData.profileImage
 					: null,
-			});
+			};
+			setUser(updatedUser);
+			setEditableUser(updatedUser);
 		}
-		setEditableUser(user);
 	};
 
 	useEffect(() => {
 		setProfileData();
 	}, [userData]);
 
-	// Mock communities data
 	const communities = [
 		{
 			id: "1",
@@ -79,15 +81,36 @@ export default function Profile() {
 		setEditableUser({ ...editableUser, [e.target.name]: e.target.value });
 	};
 
+	const uploadImage = async (profileImage) => {
+		let imgUrl;
+
+		if (profileImage instanceof File) {
+			const userImageRef = ref(storage, `profile/${userAuth.uid}`);
+
+			await uploadBytes(userImageRef, profileImage);
+			imgUrl = await getDownloadURL(userImageRef);
+		}
+
+		return imgUrl;
+	};
+
 	const handleSave = async () => {
-		// Here you would typically send the updated user data to your backend
-		setUser(editableUser);
-		console.log("Saving user data:", user);
-
-		// Call getUserData to fetch updated data from Firebase
-		await getUserData();
-
-		setIsEditing(false);
+		try {
+			const imgUrl = await uploadImage(editableUser.profileImage);
+			if (user && userAuth) {
+				const updatedUser = {
+					...editableUser,
+					updatedAt: serverTimestamp(),
+					profileImage: imgUrl || user.profileImage,
+				};
+				await updateDoc(doc(db, "users", userAuth.uid), updatedUser);
+				getUserData();
+				setProfileData();
+				setIsEditing(false);
+			}
+		} catch (error) {
+			console.log(error);
+		}
 	};
 
 	return (
@@ -108,7 +131,14 @@ export default function Profile() {
 											/>
 										) : (
 											<AvatarImage
-												src={user?.profileImage}
+												src={
+													user.profileImage instanceof
+													File
+														? URL.createObjectURL(
+																user.profileImage
+														  )
+														: user.profileImage
+												}
 												alt={user?.fullName}
 												className="object-cover"
 											/>
@@ -125,7 +155,12 @@ export default function Profile() {
 											) : (
 												<AvatarImage
 													src={
-														editableUser?.profileImage
+														editableUser.profileImage instanceof
+														File
+															? URL.createObjectURL(
+																	editableUser.profileImage
+															  )
+															: editableUser.profileImage
 													}
 													alt={user?.fullName}
 													className="object-cover"
@@ -142,16 +177,16 @@ export default function Profile() {
 												type="file"
 												className="hidden"
 												accept="image/*"
-												onChange={(e) =>
+												onChange={(e) => {
 													setEditableUser({
 														...editableUser,
 														profileImage:
-															URL.createObjectURL(
-																e.target
-																	.files?.[0]
-															),
-													})
-												} // Update handleChange to handle file input
+															e.target.files?.[0],
+													});
+													console.log(
+														e.target.files[0]
+													);
+												}}
 											/>
 										</label>
 									</>
