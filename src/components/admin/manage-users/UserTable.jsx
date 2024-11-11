@@ -28,9 +28,9 @@ const UserTable = ({ users, handleBanUser, handleDeleteUser }) => {
 			<TableBody>
 				{users.map((user) => (
 					<TableRow key={user.id}>
-						<TableCell>{user.name}</TableCell>
+						<TableCell>{user.fullName}</TableCell>
 						<TableCell>{user.email}</TableCell>
-						<TableCell>{user.status}</TableCell>
+						<TableCell>{user.role}</TableCell>
 						<TableCell>
 							<div className="space-x-1">
 								<Dialog>
@@ -46,9 +46,9 @@ const UserTable = ({ users, handleBanUser, handleDeleteUser }) => {
 											</DialogTitle>
 										</DialogHeader>
 										<div className="space-y-4">
-											<p>
+											<p className="capitalize">
 												<strong>Name:</strong>{" "}
-												{user.name}
+												{user?.fullName}
 											</p>
 											<p>
 												<strong>Email:</strong>{" "}
@@ -56,12 +56,18 @@ const UserTable = ({ users, handleBanUser, handleDeleteUser }) => {
 											</p>
 											<p>
 												<strong>Status:</strong>{" "}
-												{user.status}
+												{user.role}
 											</p>
-											<p>
-												<strong>Communities:</strong>{" "}
-												{user.communities.join(", ")}
-											</p>
+											{user?.communities && (
+												<p>
+													<strong>
+														Communities:
+													</strong>{" "}
+													{user?.communities?.join(
+														", "
+													)}
+												</p>
+											)}
 										</div>
 										<div className="space-x-3 flex items-stretch">
 											<Button

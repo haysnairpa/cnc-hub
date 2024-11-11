@@ -3,7 +3,7 @@ import { useAuth } from "@/components/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 export function PrivateRoute({ children, allowedRoles }) {
-	const { user, userData, loadingFromAuth, isLoading } = useAuth();
+	const { userData, loadingFromAuth, isLoading } = useAuth();
 
 	if (loadingFromAuth || isLoading) {
 		return (
@@ -13,7 +13,7 @@ export function PrivateRoute({ children, allowedRoles }) {
 		);
 	}
 
-	if (!user) {
+	if (!userData) {
 		return <Navigate to="/" />;
 	}
 

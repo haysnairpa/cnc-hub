@@ -63,7 +63,7 @@ export function AuthModal() {
 		}
 	};
 
-	if (user) {
+	if (userData) {
 		return (
 			<div className="flex items-center gap-2">
 				<Button variant="ghost" size="icon" asChild>

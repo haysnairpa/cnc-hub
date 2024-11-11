@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import UserCard from "@/components/admin/manage-users/UserCard";
 import UserTable from "@/components/admin/manage-users/UserTable";
+import { collection, doc, getDocs } from "firebase/firestore";
+import { db } from "@/config/firebase";
+import { deleteDoc } from "firebase/firestore"; // Import deleteDoc
+import { getAuth } from "firebase/auth"; // Import getAuth
+import { deleteUser } from "firebase/auth"; // Import deleteUser
 
 const mockUsers = [
 	{
@@ -30,6 +35,24 @@ export function ManageUsers() {
 	const [users, setUsers] = useState(mockUsers);
 	const [isMobile, setIsMobile] = useState(false);
 
+	const getUsersData = async () => {
+		const userCollectionRef = collection(db, "users");
+		try {
+			const res = await getDocs(userCollectionRef);
+			const data = res.docs.map((user) => ({
+				...user.data(),
+				id: user.id,
+			}));
+			setUsers(data);
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	useEffect(() => {
+		getUsersData();
+	}, [users]);
+
 	useEffect(() => {
 		const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
 		checkIfMobile();
@@ -37,14 +60,25 @@ export function ManageUsers() {
 		return () => window.removeEventListener("resize", checkIfMobile);
 	}, []);
 
-	const handleDeleteUser = (id) => {
-		setUsers(users.filter((user) => user.id !== id));
+	const handleDeleteUser = async (id) => {
+		const userToDelete = users.find((user) => user.id === id);
+		if (userToDelete) {
+			try {
+				// Delete user from Firestore
+				const userDocRef = doc(db, "users", id);
+				await deleteDoc(userDocRef);
+
+				getUsersData();
+			} catch (error) {
+				console.log("Error deleting user:", error);
+			}
+		}
 	};
 
 	const handleBanUser = (id) => {
 		setUsers(
 			users.map((user) =>
-				user.id === id ? { ...user, status: "Banned" } : user
+				user.id === id ? { ...user, role: "Banned" } : user
 			)
 		);
 	};
