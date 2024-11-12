@@ -16,56 +16,44 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import CommunityCard from "@/components/admin/manage-communities/CommunityCard";
-
-// Mock data for communities
-const mockCommunities = [
-	{
-		id: 1,
-		name: "Tech Enthusiasts",
-		members: [
-			{ id: 1, name: "John Doe", email: "john@example.com" },
-			{ id: 2, name: "Jane Smith", email: "jane@example.com" },
-			{ id: 3, name: "John Doe", email: "john@example.com" },
-			{ id: 4, name: "Jane Smith", email: "jane@example.com" },
-			{ id: 5, name: "John Doe", email: "john@example.com" },
-			{ id: 6, name: "Jane Smith", email: "jane@example.com" },
-			{ id: 7, name: "John Doe", email: "john@example.com" },
-			{ id: 8, name: "Jane Smith", email: "jane@example.com" },
-			{ id: 9, name: "John Doe", email: "john@example.com" },
-			{ id: 10, name: "Jane Smith", email: "jane@example.com" },
-			{ id: 11, name: "John Doe", email: "john@example.com" },
-			{ id: 12, name: "Jane Smith", email: "jane@example.com" },
-			{ id: 13, name: "John Doe", email: "john@example.com" },
-			{ id: 14, name: "Jane Smith", email: "jane@example.com" },
-		],
-		pendingMembers: [
-			{ id: 15, name: "Alice Johnson", email: "alice@example.com" },
-		],
-	},
-	{
-		id: 2,
-		name: "Book Club",
-		members: [{ id: 2, name: "Jane Smith", email: "jane@example.com" }],
-		pendingMembers: [],
-	},
-	{
-		id: 3,
-		name: "Fitness Fanatics",
-		members: [
-			{ id: 1, name: "John Doe", email: "john@example.com" },
-			{ id: 4, name: "Bob Wilson", email: "bob@example.com" },
-		],
-		pendingMembers: [
-			{ id: 5, name: "Charlie Brown", email: "charlie@example.com" },
-		],
-	},
-];
+import { db } from "@/config/firebase";
+import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
 export function ManageCommunities() {
-	const [communities, setCommunities] = useState(mockCommunities);
-	const [newCommunity, setNewCommunity] = useState({ name: "" });
+	const [communities, setCommunities] = useState([]);
 	const [selectedCommunity, setSelectedCommunity] = useState(null);
 	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const fetchCommunities = async () => {
+			try {
+				const querySnapshot = await getDocs(collection(db, "communities"));
+				const communitiesData = querySnapshot.docs.map(doc => {
+					const data = doc.data();
+					return {
+						id: doc.id,
+						name: data.name,
+						members: data.members?.map(member => ({
+							id: member.id || member.uid,
+							name: member.name || member.displayName,
+							email: member.email
+						})) || [],
+						pendingMembers: data.pendingMembers?.map(member => ({
+							id: member.id || member.uid,
+							name: member.name || member.displayName,
+							email: member.email
+						})) || [],
+						...data
+					};
+				});
+				setCommunities(communitiesData);
+			} catch (error) {
+				console.error("Error fetching communities:", error);
+			}
+		};
+
+		fetchCommunities();
+	}, []);
 
 	useEffect(() => {
 		const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
@@ -74,60 +62,62 @@ export function ManageCommunities() {
 		return () => window.removeEventListener("resize", checkIfMobile);
 	}, []);
 
-	const handleAddCommunity = () => {
-		setCommunities([
-			...communities,
-			{
-				id: communities.length + 1,
-				...newCommunity,
-				members: [],
-				pendingMembers: [],
-			},
-		]);
-		setNewCommunity({ name: "" });
+	const handleDeleteCommunity = async (id) => {
+		try {
+			await deleteDoc(doc(db, "communities", id));
+			setCommunities(communities.filter((c) => c.id !== id));
+			setSelectedCommunity(null);
+		} catch (error) {
+			console.error("Error deleting community:", error);
+		}
 	};
 
-	const handleDeleteCommunity = (id) => {
-		setCommunities(communities.filter((c) => c.id !== id));
-		setSelectedCommunity(null);
-	};
+	const handleApproveMember = async (communityId, memberId) => {
+		try {
+			const community = communities.find(c => c.id === communityId);
+			const approvedMember = community.pendingMembers.find(m => m.id === memberId);
+			
+			const updatedCommunity = {
+				members: [...(community.members || []), {
+					id: approvedMember.id,
+					name: approvedMember.name,
+					email: approvedMember.email
+				}],
+				pendingMembers: community.pendingMembers.filter(m => m.id !== memberId)
+			};
 
-	const handleApproveMember = (communityId, memberId) => {
-		setCommunities(
-			communities.map((community) => {
-				if (community.id === communityId) {
-					const approvedMember = community.pendingMembers.find(
-						(m) => m.id === memberId
-					);
-					return {
-						...community,
-						members: [...community.members, approvedMember],
-						pendingMembers: community.pendingMembers.filter(
-							(m) => m.id !== memberId
-						),
-					};
+			await updateDoc(doc(db, "communities", communityId), updatedCommunity);
+			
+			setCommunities(communities.map(c => {
+				if (c.id === communityId) {
+					return { ...c, ...updatedCommunity };
 				}
-				return community;
-			})
-		);
-		setSelectedCommunity(communities.find((c) => c.id === communityId));
+				return c;
+			}));
+		} catch (error) {
+			console.error("Error approving member:", error);
+		}
 	};
 
-	const handleRejectMember = (communityId, memberId) => {
-		setCommunities(
-			communities.map((community) => {
-				if (community.id === communityId) {
-					return {
-						...community,
-						pendingMembers: community.pendingMembers.filter(
-							(m) => m.id !== memberId
-						),
-					};
+	const handleRejectMember = async (communityId, memberId) => {
+		try {
+			const community = communities.find(c => c.id === communityId);
+			
+			const updatedCommunity = {
+				pendingMembers: community.pendingMembers.filter(m => m.id !== memberId)
+			};
+
+			await updateDoc(doc(db, "communities", communityId), updatedCommunity);
+			
+			setCommunities(communities.map(c => {
+				if (c.id === communityId) {
+					return { ...c, ...updatedCommunity };
 				}
-				return community;
-			})
-		);
-		setSelectedCommunity(communities.find((c) => c.id === communityId));
+				return c;
+			}));
+		} catch (error) {
+			console.error("Error rejecting member:", error);
+		}
 	};
 
 	return (

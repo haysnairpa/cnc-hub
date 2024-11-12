@@ -77,10 +77,10 @@
 
 @layer base {
 	* {
-		@apply border-border;
+		@apply border-border font-[Geist];
 	}
 	body {
-		@apply bg-background text-foreground;
+		@apply bg-background text-foreground font-[Geist];
 	}
 
 	/* Apple-inspired scrollbar styles */

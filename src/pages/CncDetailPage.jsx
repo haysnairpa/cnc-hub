@@ -46,6 +46,25 @@ const cncs = [
       "Members' work featured in citywide art festival",
       'Collaborative mural project beautifying campus buildings'
     ]
+  },
+  {
+    id: 3,
+    name: 'President University Badminton Club',
+    category: 'Sports',
+    description: 'Play and improve your badminton skills with fellow enthusiasts.',
+    longDescription:
+      'The President University Badminton Club is a dynamic community of badminton enthusiasts. We offer a supportive environment for players of all levels, from beginners to seasoned players. Whether you\'re looking to sharpen your skills, join a team, or simply enjoy the sport, our club provides opportunities for you to excel and have fun.',
+    image: bwf,
+    members: 30,
+    events: [
+      { name: 'Monthly Badminton Tournament', date: '2024-05-15', location: 'Sports Hall' },
+      { name: 'Beginner Training Session', date: '2024-03-10', location: 'Sports Hall' },
+      { name: 'Inter-University Badminton League', date: '2024-04-20', location: 'Sports Hall' }
+    ],
+    achievements: [
+      'Won the National University Badminton Championship 2023',
+      'Organized successful inter-university badminton league',
+    ]
   }
 ];
 

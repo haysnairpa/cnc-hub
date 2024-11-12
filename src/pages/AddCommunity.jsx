@@ -1,3 +1,6 @@
+import { db, storage } from "@/config/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import React, { useState, useEffect } from "react";
 import { PlusCircle, Trash2, Upload } from "lucide-react";
 import {
@@ -80,17 +83,50 @@ export default function AddCommunity() {
 		}
 	};
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		console.log({
-			communityName,
+		
+		try {
+		  // Upload gambar ke Storage
+		  let imageUrl = null;
+		  if (image) {
+			const imageRef = ref(storage, `communities/${image.name}`);
+			await uploadBytes(imageRef, image);
+			imageUrl = await getDownloadURL(imageRef);
+		  }
+	  
+		  // Tambahkan data ke Firestore
+		  const communityData = {
+			name: communityName,
 			description,
 			category,
-			image,
+			image: imageUrl,
 			leaderStudentId,
 			members,
 			events,
-		});
+			createdAt: new Date(),
+			updatedAt: new Date()
+		  };
+	  
+		  const docRef = await addDoc(collection(db, "communities"), communityData);
+		  console.log("Community added with ID: ", docRef.id);
+	  
+		  // Reset form
+		  setCommunityName("");
+		  setDescription("");
+		  setCategory("");
+		  setImage(null);
+		  setImagePreview(null);
+		  setLeaderStudentId("");
+		  setMembers([]);
+		  setEvents([]);
+	  
+		  alert("Community berhasil ditambahkan!");
+		  
+		} catch (error) {
+		  console.error("Error adding community: ", error);
+		  alert("Gagal menambahkan community. Silakan coba lagi.");
+		}
 	};
 
 	return (

@@ -26,10 +26,11 @@ export function SearchBar({ onSearch, onCategoryChange }) {
         </SelectTrigger>
         <SelectContent className="font-[Geist]">
           <SelectItem value="all">All Categories</SelectItem>
-          <SelectItem value="Technology">Technology</SelectItem>
-          <SelectItem value="Arts & Media">Arts & Media</SelectItem>
-          <SelectItem value="Sports">Sports</SelectItem>
-          <SelectItem value="Academic">Academic</SelectItem>
+          <SelectItem value="technology">Technology</SelectItem>
+          <SelectItem value="sports">Sports</SelectItem>
+          <SelectItem value="arts">Arts</SelectItem>
+          <SelectItem value="education">Education</SelectItem>
+          <SelectItem value="other">Other</SelectItem>
         </SelectContent>
       </Select>
     </div>
