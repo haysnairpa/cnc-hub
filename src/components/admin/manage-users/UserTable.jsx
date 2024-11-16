@@ -63,9 +63,9 @@ const UserTable = ({ users, handleBanUser, handleDeleteUser }) => {
 													<strong>
 														Communities:
 													</strong>{" "}
-													{user?.communities?.join(
-														", "
-													)}
+													{user?.communities
+														?.map((c) => c.name)
+														.join(", ")}
 												</p>
 											)}
 										</div>

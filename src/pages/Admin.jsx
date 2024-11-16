@@ -5,7 +5,7 @@ import { ManageUsers } from "@/components/admin/ManageUsers";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import AddCommunity from "@/pages/AddCommunity";
+import AddCommunity from "@/components/admin/AddCommunity";
 
 export default function Admin() {
 	const [activeTab, setActiveTab] = useState("communities");

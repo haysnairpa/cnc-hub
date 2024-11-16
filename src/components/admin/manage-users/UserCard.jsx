@@ -11,18 +11,20 @@ import {
 const UserCard = ({ user, handleDeleteUser, handleBanUser }) => (
 	<Card key={user.id} className="mb-4">
 		<CardHeader>
-			<CardTitle>{user.name}</CardTitle>
+			<CardTitle>{user.fullName}</CardTitle>
 		</CardHeader>
 		<CardContent>
 			<p>
 				<strong>Email:</strong> {user.email}
 			</p>
 			<p>
-				<strong>Status:</strong> {user.status}
+				<strong>Status:</strong> {user.role}
 			</p>
-			<p>
-				<strong>Communities:</strong> {user.communities.join(", ")}
-			</p>
+			{user?.communities && (
+				<p>
+					<strong>Communities:</strong> {user.communities.join(", ")}
+				</p>
+			)}
 			<div className="mt-4 space-x-2 flex  flex-wrap items-stretch">
 				<Dialog>
 					<DialogTrigger asChild>
@@ -36,18 +38,20 @@ const UserCard = ({ user, handleDeleteUser, handleBanUser }) => (
 						</DialogHeader>
 						<div className="space-y-4">
 							<p>
-								<strong>Name:</strong> {user.name}
+								<strong>Name:</strong> {user.fullName}
 							</p>
 							<p>
 								<strong>Email:</strong> {user.email}
 							</p>
 							<p>
-								<strong>Status:</strong> {user.status}
+								<strong>Status:</strong> {user.role}
 							</p>
-							<p>
-								<strong>Communities:</strong>{" "}
-								{user.communities.join(", ")}
-							</p>
+							{user?.communities && (
+								<p>
+									<strong>Communities:</strong>{" "}
+									{user.communities.join(", ")}
+								</p>
+							)}
 							<div className="flex items-center gap-3">
 								<Button
 									variant="destructive"

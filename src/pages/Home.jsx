@@ -21,18 +21,20 @@ export default function Home() {
 	useEffect(() => {
 		const fetchCommunities = async () => {
 			try {
-				const querySnapshot = await getDocs(collection(db, "communities"));
-				const communitiesData = querySnapshot.docs.map(doc => ({
+				const querySnapshot = await getDocs(
+					collection(db, "communities")
+				);
+				const communitiesData = querySnapshot.docs.map((doc) => ({
 					id: doc.id,
 					...doc.data(),
 					logo: doc.data().image,
 					shortDescription: doc.data().description,
-					memberCount: doc.data().members?.length || 0,
-					registrationOpen: true
+					memberCount: doc.data().members?.length + 1 || 0,
+					registrationOpen: true,
 				}));
 				setCommunities(communitiesData);
 			} catch (error) {
-				console.error("Error fetching communities:", error);
+				console.log("Error fetching communities:", error);
 			}
 		};
 
@@ -51,13 +53,16 @@ export default function Home() {
 
 	const filteredCncs = communities.filter((cnc) => {
 		const searchLower = searchQuery.toLowerCase();
-		const matchesSearch = searchQuery === "" || 
-			cnc.name.toLowerCase().includes(searchLower) || 
+		const matchesSearch =
+			searchQuery === "" ||
+			cnc.name.toLowerCase().includes(searchLower) ||
 			cnc.shortDescription.toLowerCase().includes(searchLower);
-		
-		const matchesCategory = selectedCategory === "all" || selectedCategory === "" || 
+
+		const matchesCategory =
+			selectedCategory === "all" ||
+			selectedCategory === "" ||
 			cnc.category?.toLowerCase() === selectedCategory.toLowerCase();
-		
+
 		return matchesSearch && matchesCategory;
 	});
 
@@ -78,10 +83,15 @@ export default function Home() {
 						Welcome, Presunivers!
 					</h1>
 					<p className="text-lg text-gray-700 md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-						Join the clubs and communities that align with your interests and talents at our university
+						Join the clubs and communities that align with your
+						interests and talents at our university
 					</p>
 					<div className="flex flex-col items-center gap-8 pt-4">
-						<Button size="lg" onClick={scrollToContent} className="text-base px-8 py-6">
+						<Button
+							size="lg"
+							onClick={scrollToContent}
+							className="text-base px-8 py-6"
+						>
 							Bring me
 						</Button>
 						<motion.button
@@ -99,7 +109,10 @@ export default function Home() {
 
 			<main className="flex-1">
 				<div className="container mx-auto px-4 py-16 space-y-16 max-w-[1600px]">
-					<SearchBar onSearch={setSearchQuery} onCategoryChange={setSelectedCategory} />
+					<SearchBar
+						onSearch={setSearchQuery}
+						onCategoryChange={setSelectedCategory}
+					/>
 
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}

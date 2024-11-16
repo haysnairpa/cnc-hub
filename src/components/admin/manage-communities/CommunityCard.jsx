@@ -21,11 +21,18 @@ const CommunityCard = ({
 		</CardHeader>
 		<CardContent>
 			<p>
-				<strong>Members:</strong> {community.members.length}
+				<strong>Members:</strong>{" "}
+				{community.members?.filter(
+					(member) => member.status === "member"
+				).length + 1}
 			</p>
 			<p>
 				<strong>Pending Members:</strong>{" "}
-				{community.pendingMembers.length}
+				{
+					community?.members?.filter(
+						(member) => member.status === "pending"
+					).length
+				}
 			</p>
 			<div className="mt-4">
 				<Dialog>
@@ -48,11 +55,21 @@ const CommunityCard = ({
 									Members
 								</h3>
 								<ul>
-									{community.members.map((member) => (
-										<li key={member.id}>
-											{member.name} - {member.email}
-										</li>
-									))}
+									<li>
+										{community?.leader?.fullName + " - "}
+										{community?.leader?.email + " (leader)"}
+									</li>
+									{community?.members
+										?.filter(
+											(member) =>
+												member.status === "member"
+										)
+										?.map((member) => (
+											<li key={member.studentId}>
+												{member.fullName} -{" "}
+												{member.email}
+											</li>
+										))}
 								</ul>
 							</div>
 							<div>
@@ -60,43 +77,46 @@ const CommunityCard = ({
 									Pending Members
 								</h3>
 								<ul>
-									{community.pendingMembers.map((member) => (
-										<li
-											key={member.id}
-											className="flex items-center justify-between mb-2"
-										>
-											<span>
-												{member.name} - {member.email}
-											</span>
-											<div>
-												<Button
-													variant="outline"
-													size="sm"
-													className="mr-2"
-													onClick={() =>
-														handleApproveMember(
-															community.id,
-															member.id
-														)
-													}
-												>
-													Approve
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() =>
-														handleRejectMember(
-															community.id,
-															member.id
-														)
-													}
-												>
-													Reject
-												</Button>
-											</div>
-										</li>
-									))}
+									{community?.members
+										?.filter(
+											(member) =>
+												member.status === "pending"
+										)
+										?.map((member) => (
+											<li
+												key={member.studentId}
+												className="flex items-center justify-between mb-2"
+											>
+												<span>{member.email}</span>
+												<div>
+													<Button
+														variant="outline"
+														size="sm"
+														className="mr-2"
+														onClick={() =>
+															handleApproveMember(
+																community.id,
+																member.id
+															)
+														}
+													>
+														Approve
+													</Button>
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															handleRejectMember(
+																community.id,
+																member.id
+															)
+														}
+													>
+														Reject
+													</Button>
+												</div>
+											</li>
+										))}
 								</ul>
 							</div>
 							<Button
@@ -107,6 +127,7 @@ const CommunityCard = ({
 							>
 								Delete Community
 							</Button>
+							<Button className="ml-3">Edit Community</Button>
 						</div>
 					</DialogContent>
 				</Dialog>

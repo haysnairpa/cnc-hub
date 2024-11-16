@@ -14,16 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/hooks/use-toast";
 
 export default function AddCommunity() {
+	const { toast } = useToast();
+
 	const [communityName, setCommunityName] = useState("");
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState("");
@@ -80,52 +76,71 @@ export default function AddCommunity() {
 	const handleImageChange = (e) => {
 		if (e.target.files && e.target.files[0]) {
 			setImage(e.target.files[0]);
+			console.log(e.target.files[0]);
 		}
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		
+
 		try {
-		  // Upload gambar ke Storage
-		  let imageUrl = null;
-		  if (image) {
-			const imageRef = ref(storage, `communities/${image.name}`);
-			await uploadBytes(imageRef, image);
-			imageUrl = await getDownloadURL(imageRef);
-		  }
-	  
-		  // Tambahkan data ke Firestore
-		  const communityData = {
-			name: communityName,
-			description,
-			category,
-			image: imageUrl,
-			leaderStudentId,
-			members,
-			events,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		  };
-	  
-		  const docRef = await addDoc(collection(db, "communities"), communityData);
-		  console.log("Community added with ID: ", docRef.id);
-	  
-		  // Reset form
-		  setCommunityName("");
-		  setDescription("");
-		  setCategory("");
-		  setImage(null);
-		  setImagePreview(null);
-		  setLeaderStudentId("");
-		  setMembers([]);
-		  setEvents([]);
-	  
-		  alert("Community berhasil ditambahkan!");
-		  
+			const communityMembers = members.map((m) => ({
+				studentId: m,
+				status: "member",
+			}));
+			let imageUrl;
+			let communityData;
+			if (image instanceof File) {
+				const imageRef = ref(storage, `communities/${image.name}`);
+				await uploadBytes(imageRef, image);
+				imageUrl = await getDownloadURL(imageRef);
+			}
+
+			console.log("imageUrl", imageUrl);
+
+			if (imageUrl) {
+				communityData = {
+					name: communityName,
+					description,
+					category,
+					image: imageUrl,
+					leader: leaderStudentId,
+					members: communityMembers,
+					events,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				};
+			} else {
+				communityData = {
+					name: communityName,
+					description,
+					category,
+					leader: leaderStudentId,
+					members: communityMembers,
+					events,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				};
+			}
+
+			console.log("Community Data: ", communityData);
+
+			await addDoc(collection(db, "communities"), communityData);
+
+			// Reset form
+			setCommunityName("");
+			setDescription("");
+			setCategory("");
+			setImage(null);
+			setImagePreview(null);
+			setLeaderStudentId("");
+			setMembers([]);
+			setEvents([]);
+
+			toast({ title: "Community Successfully added!" });
 		} catch (error) {
-		  console.error("Error adding community: ", error);
-		  alert("Gagal menambahkan community. Silakan coba lagi.");
+			console.error("Error adding community: ", error);
+			alert("Gagal menambahkan community. Silakan coba lagi.");
 		}
 	};
 
@@ -180,36 +195,27 @@ export default function AddCommunity() {
 							<Label htmlFor="category" className="text-gray-700">
 								Category
 							</Label>
-							<Select onValueChange={setCategory} required>
-								<SelectTrigger className="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500">
-									<SelectValue placeholder="Select a category" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="technology">
-										Technology
-									</SelectItem>
-									<SelectItem value="sports">
-										Sports
-									</SelectItem>
-									<SelectItem value="arts">Arts</SelectItem>
-									<SelectItem value="education">
-										Education
-									</SelectItem>
-									<SelectItem value="other">Other</SelectItem>
-								</SelectContent>
-							</Select>
+
+							<Input
+								id="category"
+								placeholder="Category"
+								value={category}
+								onChange={(e) => setCategory(e.target.value)}
+								required
+								className="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="image" className="text-gray-700">
 								Community Image
 							</Label>
-							<div className="flex items-center space-x-4">
+							<div className="">
 								<Input
 									id="image"
 									type="file"
 									onChange={handleImageChange}
 									accept="image/*"
-									className={`w-full border-gray-300 focus:border-gray-500 focus:ring-gray-50`}
+									className={`w-full border-gray-300 focus:border-gray-500 focus:ring-gray-50 hidden`}
 								/>
 								<Button
 									type="button"
@@ -219,9 +225,16 @@ export default function AddCommunity() {
 											.getElementById("image")
 											?.click()
 									}
+									className="w-full"
 								>
-									<Upload className="h-4 w-4 mr-2" />
-									Upload
+									{!imagePreview ? (
+										<>
+											<Upload className="" />
+											Upload
+										</>
+									) : (
+										"Change Image"
+									)}
 								</Button>
 							</div>
 							{imagePreview && (

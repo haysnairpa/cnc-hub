@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
 		isLoading,
 		getUserData,
 		signOut,
+		setIsLoading,
 	};
 
 	return (
