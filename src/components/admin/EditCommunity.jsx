@@ -1,5 +1,13 @@
+"use client";
+
 import { db, storage } from "@/config/firebase";
-import { collection, addDoc, doc, setDoc } from "firebase/firestore";
+import {
+	addDoc,
+	collection,
+	deleteDoc,
+	doc,
+	updateDoc,
+} from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import React, { useState, useEffect } from "react";
 import { PlusCircle, Trash2, Upload } from "lucide-react";
@@ -16,36 +24,70 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
-export default function AddCommunity() {
+export default function EditCommunity({ communityId, initialData }) {
 	const { toast } = useToast();
 
-	const [communityName, setCommunityName] = useState("");
-	const [description, setDescription] = useState("");
-	const [category, setCategory] = useState("");
+	const [communityName, setCommunityName] = useState(initialData.name || "");
+	const [description, setDescription] = useState(
+		initialData.description || ""
+	);
+	const [category, setCategory] = useState(initialData.category || "");
 	const [image, setImage] = useState(null);
-	const [imagePreview, setImagePreview] = useState(null);
-	const [leaderStudentId, setLeaderStudentId] = useState("");
-	const [members, setMembers] = useState([]);
-	const [events, setEvents] = useState([]);
+	const [imagePreview, setImagePreview] = useState(initialData.image || null);
+	const [leaderStudentId, setLeaderStudentId] = useState(
+		initialData.leader || ""
+	);
+
+	const [members, setMembers] = useState(initialData.members || []);
+	const [events, setEvents] = useState(initialData.events || []);
+	const [registrationOpen, setRegistrationOpen] = useState(
+		initialData.registrationOpen || false
+	);
+
+	console.log(events);
+
+	const initialEvents = initialData.events || [];
+	const pendingMembers = initialData.members
+		.filter((m) => m.status === "pending")
+		.map((m) => ({
+			studentId: m.studentId,
+			status: m.status,
+		}));
+
+	useEffect(() => {
+		setMembers(
+			initialData?.members
+				.map((m) => ({
+					studentId: m.studentId,
+					status: m.status,
+				}))
+				.filter((m) => m.status === "member")
+		);
+	}, []);
 
 	useEffect(() => {
 		if (image) {
 			const objectUrl = URL.createObjectURL(image);
 			setImagePreview(objectUrl);
-
 			return () => URL.revokeObjectURL(objectUrl);
 		}
 	}, [image]);
 
 	const handleAddMember = () => {
-		setMembers([...members, ""]);
+		setMembers([...members, { studentId: "" }]);
 	};
 
 	const handleMemberChange = (index, value) => {
 		const newMembers = [...members];
-		newMembers[index] = value;
+		newMembers[index].studentId = value;
 		setMembers(newMembers);
 	};
 
@@ -58,7 +100,7 @@ export default function AddCommunity() {
 	const handleAddEvent = () => {
 		setEvents([
 			...events,
-			{ title: "", date: "", place: "", description: "" },
+			{ date: "", place: "", description: "", eventName: "" },
 		]);
 	};
 
@@ -77,90 +119,96 @@ export default function AddCommunity() {
 	const handleImageChange = (e) => {
 		if (e.target.files && e.target.files[0]) {
 			setImage(e.target.files[0]);
-			console.log(e.target.files[0]);
 		}
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
-		const comId = uuidv4();
-
 		try {
-			const communityMembers = members.map((m) => ({
-				studentId: m,
-				status: "member",
-			}));
-			let imageUrl;
-			let communityData;
+			const communityRef = doc(db, "communities", communityId);
+			let imageUrl = initialData.image;
+
 			if (image instanceof File) {
 				const imageRef = ref(storage, `communities/${image.name}`);
 				await uploadBytes(imageRef, image);
 				imageUrl = await getDownloadURL(imageRef);
 			}
 
-			console.log("imageUrl", imageUrl);
+			const updatedMembers = members.map((m) => ({
+				studentId: m.studentId,
+				status: "member",
+			}));
 
-			if (imageUrl) {
-				communityData = {
-					name: communityName,
-					description,
-					category,
-					image: imageUrl,
-					leader: leaderStudentId,
-					members: communityMembers,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				};
-			} else {
-				communityData = {
-					name: communityName,
-					description,
-					category,
-					leader: leaderStudentId,
-					members: communityMembers,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				};
+			const communityData = {
+				name: communityName,
+				description,
+				category,
+				image: imageUrl,
+				leader: leaderStudentId,
+				members: [...updatedMembers, ...pendingMembers],
+				registrationOpen,
+				updatedAt: new Date(),
+			};
+
+			console.log("communityData", communityData);
+			await updateDoc(communityRef, communityData);
+
+			const existingEventIds = initialEvents
+				.filter((ev) => ev && ev.id) // Ensure valid events
+				.map((ev) => ev.id);
+
+			const updatedEventIds = events
+				.filter((ev) => ev && ev.id) // Only include valid events
+				.map((ev) => ev.id);
+
+			// Delete removed events
+			const eventsToDelete = existingEventIds.filter(
+				(id) => !updatedEventIds.includes(id) // Compare ids only
+			);
+
+			for (const ev of eventsToDelete) {
+				await deleteDoc(
+					doc(db, `communities/${communityId}/events`, ev)
+				);
 			}
 
-			await setDoc(doc(db, "communities", comId), communityData);
-
-			if (events && events.length > 0) {
-				for (const ev of events) {
+			for (const ev of events) {
+				if (ev.id) {
+					const { id, ...e } = ev;
+					// Existing event
+					await updateDoc(
+						doc(db, `communities/${communityId}/events`, ev.id),
+						e
+					);
+				} else {
+					// New event
 					await addDoc(
-						collection(db, `communities/${comId}/events`),
+						collection(db, `communities/${communityId}/events`),
 						ev
 					);
 				}
 			}
 
-			// Reset form
-			setCommunityName("");
-			setDescription("");
-			setCategory("");
-			setImage(null);
-			setImagePreview(null);
-			setLeaderStudentId("");
-			setMembers([]);
-			setEvents([]);
-
-			toast({ title: "Community Successfully added!" });
+			toast({ title: "Community Successfully updated!" });
 		} catch (error) {
-			console.error("Error adding community: ", error);
-			alert("Gagal menambahkan community. Silakan coba lagi.");
+			console.error("Error updating community: ", error);
+			toast({
+				title: "Failed to update community. Please try again.",
+				variant: "destructive",
+			});
 		}
 	};
 
 	return (
-		<div>
+		<div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8">
 			<Card className="max-w-4xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden">
 				<CardHeader className="bg-black text-white p-6">
 					<CardTitle className="text-2xl font-semibold">
-						Add New Community
+						Edit Community
 					</CardTitle>
 					<CardDescription className="text-gray-300">
-						Create a new community on CnC Hub
+						Update your community on CnC Hub
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="p-6">
@@ -203,7 +251,6 @@ export default function AddCommunity() {
 							<Label htmlFor="category" className="text-gray-700">
 								Category
 							</Label>
-
 							<Input
 								id="category"
 								placeholder="Category"
@@ -217,13 +264,13 @@ export default function AddCommunity() {
 							<Label htmlFor="image" className="text-gray-700">
 								Community Image
 							</Label>
-							<div className="">
+							<div className="mt-1 flex items-center">
 								<Input
 									id="image"
 									type="file"
 									onChange={handleImageChange}
 									accept="image/*"
-									className={`w-full border-gray-300 focus:border-gray-500 focus:ring-gray-50 hidden`}
+									className="hidden"
 								/>
 								<Button
 									type="button"
@@ -237,8 +284,8 @@ export default function AddCommunity() {
 								>
 									{!imagePreview ? (
 										<>
-											<Upload className="" />
-											Upload
+											<Upload className="mr-2 h-4 w-4" />
+											Upload Image
 										</>
 									) : (
 										"Change Image"
@@ -250,7 +297,7 @@ export default function AddCommunity() {
 									<img
 										src={imagePreview}
 										alt="Community image preview"
-										className="max-w-full h-auto rounded-lg shadow-md"
+										className="w-full h-auto rounded-lg shadow-md object-cover"
 									/>
 								</div>
 							)}
@@ -273,7 +320,29 @@ export default function AddCommunity() {
 								className="w-full border-gray-300 focus:border-gray-500 focus:ring-gray-500"
 							/>
 						</div>
-						<div className="space-y-2 flex flex-col">
+						<div className="space-y-2">
+							<Label
+								htmlFor="registrationOpen"
+								className="text-gray-700"
+							>
+								Open Registration
+							</Label>
+							<Select
+								onValueChange={(value) =>
+									setRegistrationOpen(value === "yes")
+								}
+								defaultValue={registrationOpen ? "yes" : "no"}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select open registration status" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="yes">Yes</SelectItem>
+									<SelectItem value="no">No</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="space-y-2">
 							<Label className="text-gray-700">Members</Label>
 							{members.map((member, index) => (
 								<div
@@ -282,7 +351,7 @@ export default function AddCommunity() {
 								>
 									<Input
 										placeholder="Enter member's student ID"
-										value={member}
+										value={member.studentId}
 										onChange={(e) =>
 											handleMemberChange(
 												index,
@@ -307,13 +376,13 @@ export default function AddCommunity() {
 								type="button"
 								variant="outline"
 								onClick={handleAddMember}
-								className="mt-2"
+								className="mt-2 w-full"
 							>
-								<PlusCircle className="h-4 w-4" />
+								<PlusCircle className="h-4 w-4 mr-2" />
 								Add Member
 							</Button>
 						</div>
-						<div className="space-y-2 flex flex-col">
+						<div className="space-y-2">
 							<Label className="text-gray-700">Events</Label>
 							{events.map((event, index) => (
 								<div
@@ -321,7 +390,7 @@ export default function AddCommunity() {
 									className="space-y-2 p-4 border border-gray-200 rounded-md"
 								>
 									<Input
-										placeholder="Event Title"
+										placeholder="Event Name"
 										value={event.eventName}
 										onChange={(e) =>
 											handleEventChange(
@@ -385,7 +454,7 @@ export default function AddCommunity() {
 								type="button"
 								variant="outline"
 								onClick={handleAddEvent}
-								className="mt-2"
+								className="mt-2 w-full"
 							>
 								<PlusCircle className="h-4 w-4 mr-2" />
 								Add Event
@@ -396,10 +465,10 @@ export default function AddCommunity() {
 				<CardFooter className="p-6">
 					<Button
 						type="submit"
-						className="w-full text-white"
+						className="w-full bg-gray-900 text-white hover:bg-gray-800"
 						onClick={handleSubmit}
 					>
-						Create Community
+						Update Community
 					</Button>
 				</CardFooter>
 			</Card>

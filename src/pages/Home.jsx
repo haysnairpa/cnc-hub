@@ -1,4 +1,4 @@
-import { CncCard } from "@/components/cnc/CncCard";
+import CncCard from "@/components/cnc/CncCard";
 import { SearchBar } from "@/components/search/SearchBar";
 import { Footer } from "@/components/layout/Footer";
 import { WavyBackground } from "@/components/ui/wavy-background";
@@ -30,7 +30,7 @@ export default function Home() {
 					logo: doc.data().image,
 					shortDescription: doc.data().description,
 					memberCount: doc.data().members?.length + 1 || 0,
-					registrationOpen: true,
+					registrationOpen: doc.data()?.registrationOpen || false,
 				}));
 				setCommunities(communitiesData);
 			} catch (error) {

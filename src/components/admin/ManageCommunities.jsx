@@ -37,6 +37,22 @@ export function ManageCommunities() {
 		}
 	};
 
+	const getComEvents = async (comId) => {
+		const res = await getDocs(
+			collection(db, `communities/${comId}/events`)
+		);
+
+		if (!res.empty) {
+			const filteredData = res.docs.map((doc) => ({
+				...doc.data(),
+				id: doc.id,
+			}));
+			return filteredData;
+		} else {
+			return null;
+		}
+	};
+
 	const fetchCommunities = async () => {
 		setIsLoading(true);
 		try {
@@ -46,6 +62,8 @@ export function ManageCommunities() {
 					const data = doc.data();
 
 					const leaderdata = await fetchCommunityMembers(data.leader);
+
+					const events = await getComEvents(doc.id);
 
 					const membersData = await Promise.all(
 						data.members?.map(async (member) => {
@@ -66,6 +84,7 @@ export function ManageCommunities() {
 						category: data.category,
 						leader: leaderdata,
 						members: membersData,
+						events: events,
 					};
 				})
 			);
@@ -79,6 +98,8 @@ export function ManageCommunities() {
 
 	useEffect(() => {
 		fetchCommunities();
+
+		return () => fetchCommunities();
 	}, []);
 
 	useEffect(() => {

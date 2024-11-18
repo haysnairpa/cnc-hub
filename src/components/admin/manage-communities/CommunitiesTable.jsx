@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -14,6 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import EditCommunity from "@/components/admin/EditCommunity";
 
 const CommunitiesTable = ({
 	communities,
@@ -22,6 +24,17 @@ const CommunitiesTable = ({
 	setSelectedCommunity,
 	handleRejectMember,
 }) => {
+	const [editDialogOpen, setEditDialogOpen] = useState(false);
+	const [communityToEdit, setCommunityToEdit] = useState(null);
+
+	const openEditDialog = (community) => {
+		setCommunityToEdit({
+			...community,
+			leader: community.leader.studentId,
+		});
+		setEditDialogOpen(true);
+	};
+
 	return (
 		<Table>
 			<TableHeader>
@@ -29,6 +42,7 @@ const CommunitiesTable = ({
 					<TableHead>Name</TableHead>
 					<TableHead>Members</TableHead>
 					<TableHead>Pending Members</TableHead>
+					<TableHead>Actions</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -37,13 +51,13 @@ const CommunitiesTable = ({
 						<TableCell>{community.name}</TableCell>
 						<TableCell>
 							{community?.members?.filter(
-								(m) => m.status === "member"
+								(m) => m?.status === "member"
 							).length + 1}
 						</TableCell>
 						<TableCell>
 							{
 								community?.members?.filter(
-									(m) => m.status === "pending"
+									(m) => m?.status === "pending"
 								).length
 							}
 						</TableCell>
@@ -60,7 +74,7 @@ const CommunitiesTable = ({
 										View Details
 									</Button>
 								</DialogTrigger>
-								<DialogContent className="max-w-3xl max-h-[500px] overflow-y-scroll">
+								<DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
 									<DialogHeader>
 										<DialogTitle>
 											{community.name}
@@ -103,29 +117,28 @@ const CommunitiesTable = ({
 													{community?.members
 														?.filter(
 															(member) =>
-																member.status ===
-																"member"
+																member &&
+																member?.status ===
+																	"member"
 														)
-														?.map((member) => {
-															return (
-																<TableRow
-																	key={
-																		member.studentId
+														?.map((member) => (
+															<TableRow
+																key={
+																	member.studentId
+																}
+															>
+																<TableCell>
+																	{
+																		member?.fullName
 																	}
-																>
-																	<TableCell>
-																		{
-																			member?.fullName
-																		}
-																	</TableCell>
-																	<TableCell>
-																		{
-																			member?.email
-																		}
-																	</TableCell>
-																</TableRow>
-															);
-														})}
+																</TableCell>
+																<TableCell>
+																	{
+																		member?.email
+																	}
+																</TableCell>
+															</TableRow>
+														))}
 												</TableBody>
 											</Table>
 										</div>
@@ -202,19 +215,54 @@ const CommunitiesTable = ({
 												</TableBody>
 											</Table>
 										</div>
-										<Button
-											variant="destructive"
-											onClick={() =>
-												handleDeleteCommunity(
-													community.id
-												)
-											}
-										>
-											Delete Community
-										</Button>
-										<Button className="ml-3">
-											Edit Community
-										</Button>
+										<div className="flex justify-between">
+											<Button
+												variant="destructive"
+												onClick={() =>
+													handleDeleteCommunity(
+														community.id
+													)
+												}
+											>
+												Delete Community
+											</Button>
+											<Dialog
+												open={editDialogOpen}
+												onOpenChange={setEditDialogOpen}
+											>
+												<DialogTrigger asChild>
+													<Button
+														onClick={() =>
+															openEditDialog(
+																community
+															)
+														}
+													>
+														Edit Community
+													</Button>
+												</DialogTrigger>
+												<DialogContent className="max-w-4xl max-h-[86vh] overflow-y-auto">
+													<DialogHeader>
+														<DialogTitle>
+															Edit Community
+														</DialogTitle>
+													</DialogHeader>
+													{communityToEdit && (
+														<EditCommunity
+															communityId={
+																communityToEdit.id
+															}
+															initialData={
+																communityToEdit
+															}
+															setEditDialogOpen={
+																setEditDialogOpen
+															}
+														/>
+													)}
+												</DialogContent>
+											</Dialog>
+										</div>
 									</div>
 								</DialogContent>
 							</Dialog>
@@ -225,4 +273,5 @@ const CommunitiesTable = ({
 		</Table>
 	);
 };
+
 export default CommunitiesTable;
