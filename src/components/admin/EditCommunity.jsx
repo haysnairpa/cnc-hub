@@ -52,7 +52,6 @@ export default function EditCommunity({ communityId, initialData }) {
 		initialData.registrationOpen || false
 	);
 
-	console.log(events);
 
 	const initialEvents = initialData.events || [];
 	const pendingMembers = initialData.members

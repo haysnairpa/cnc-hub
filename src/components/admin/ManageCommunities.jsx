@@ -66,15 +66,18 @@ export function ManageCommunities() {
 					const events = await getComEvents(doc.id);
 
 					const membersData = await Promise.all(
-						data.members?.map(async (member) => {
-							const memberData = await fetchCommunityMembers(
-								member.studentId
-							);
-							return memberData
-								? { ...memberData, ...member }
-								: null;
-						})
+						(data.members || [])
+							.filter(member => member && member.studentId)
+							.map(async (member) => {
+								const memberData = await fetchCommunityMembers(member.studentId);
+								return memberData ? {
+									...memberData,
+									status: member.status || "member"
+								} : null;
+							})
 					);
+
+					const validMembers = membersData.filter(m => m !== null);
 
 					return {
 						id: doc.id,
@@ -83,7 +86,7 @@ export function ManageCommunities() {
 						image: data.image,
 						category: data.category,
 						leader: leaderdata,
-						members: membersData,
+						members: validMembers,
 						events: events,
 					};
 				})

@@ -30,7 +30,7 @@ const CommunitiesTable = ({
 	const openEditDialog = (community) => {
 		setCommunityToEdit({
 			...community,
-			leader: community.leader.studentId,
+			leader: community.leader,
 		});
 		setEditDialogOpen(true);
 	};

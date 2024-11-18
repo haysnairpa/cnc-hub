@@ -40,12 +40,12 @@ export default function AddCommunity() {
 	}, [image]);
 
 	const handleAddMember = () => {
-		setMembers([...members, ""]);
+		setMembers([...members, {studentId: ""}]);
 	};
 
 	const handleMemberChange = (index, value) => {
 		const newMembers = [...members];
-		newMembers[index] = value;
+		newMembers[index].studentId = value;
 		setMembers(newMembers);
 	};
 
@@ -58,7 +58,7 @@ export default function AddCommunity() {
 	const handleAddEvent = () => {
 		setEvents([
 			...events,
-			{ title: "", date: "", place: "", description: "" },
+			{ date: "", place: "", description: "", eventName: "" },
 		]);
 	};
 
@@ -88,8 +88,8 @@ export default function AddCommunity() {
 
 		try {
 			const communityMembers = members.map((m) => ({
-				studentId: m,
-				status: "member",
+				studentId: m.studentId,
+				status: "member",	
 			}));
 			let imageUrl;
 			let communityData;
@@ -99,7 +99,6 @@ export default function AddCommunity() {
 				imageUrl = await getDownloadURL(imageRef);
 			}
 
-			console.log("imageUrl", imageUrl);
 
 			if (imageUrl) {
 				communityData = {
@@ -282,7 +281,7 @@ export default function AddCommunity() {
 								>
 									<Input
 										placeholder="Enter member's student ID"
-										value={member}
+										value={member.studentId}
 										onChange={(e) =>
 											handleMemberChange(
 												index,
