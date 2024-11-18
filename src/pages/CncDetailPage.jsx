@@ -105,11 +105,9 @@ export default function CncDetailPage() {
 					<div className="flex items-center text-gray-600 mb-6">
 						<Users className="mr-2 h-5 w-5" />
 						<span className="text-lg">
-							{
-								community?.members?.filter(
-									(member) => member.status === "member"
-								).length
-							}{" "}
+							{community?.members?.filter(
+								(member) => member.status === "member"
+							).length + 1}{" "}
 							members
 						</span>
 					</div>

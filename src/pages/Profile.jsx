@@ -2,13 +2,22 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/components/contexts/AuthContext";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "@/config/firebase";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+	collection,
+	doc,
+	getDocs,
+	query,
+	serverTimestamp,
+	updateDoc,
+	where,
+} from "firebase/firestore";
 import ProfileCommunitiesContainer from "@/components/profile/ProfileCommunitiesContainer";
 import Profilecard from "@/components/profile/Profilecard";
 
 export default function Profile() {
 	const { userData, user: userAuth, getUserData } = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
+	const [communities, setCommunities] = useState([]);
 
 	const [user, setUser] = useState({
 		fullName: "",
@@ -17,6 +26,30 @@ export default function Profile() {
 		profileImage: null,
 	});
 	const [editableUser, setEditableUser] = useState(user);
+
+	const getUserJoinedCnc = async (studentId) => {
+		try {
+			const collectionRef = collection(db, "communities");
+			const q = query(
+				collectionRef,
+				where("members", "array-contains", {
+					status: "member",
+					studentId,
+				})
+			);
+			const res = await getDocs(q);
+			if (!res.empty) {
+				const joinedCnc = res.docs.map((doc) => ({
+					...doc.data(),
+					id: doc.id,
+				}));
+				console.log(joinedCnc);
+				setCommunities(joinedCnc);
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	};
 
 	const setProfileData = () => {
 		if (userData) {
@@ -35,33 +68,8 @@ export default function Profile() {
 
 	useEffect(() => {
 		setProfileData();
+		getUserJoinedCnc(userData.studentId);
 	}, [userData]);
-
-	const communities = [
-		{
-			id: "1",
-			title: "Photography Club",
-			category: "Arts",
-			totalMembers: 50,
-			description:
-				"Capture moments and share your passion for photography.",
-		},
-		{
-			id: "2",
-			title: "Debate Society",
-			category: "Academic",
-			totalMembers: 30,
-			description:
-				"Enhance your public speaking and critical thinking skills.",
-		},
-		{
-			id: "3",
-			title: "Eco Warriors",
-			category: "Environment",
-			totalMembers: 40,
-			description: "Join us in making the world a greener place.",
-		},
-	];
 
 	const handleEditToggle = () => {
 		setIsEditing(!isEditing);
@@ -109,6 +117,7 @@ export default function Profile() {
 				<Profilecard
 					user={user}
 					editableUser={editableUser}
+					setEditableUser={setEditableUser}
 					handleEditToggle={handleEditToggle}
 					handleInputChange={handleInputChange}
 					handleSave={handleSave}

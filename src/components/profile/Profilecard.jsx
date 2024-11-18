@@ -8,6 +8,7 @@ import { Camera, Pencil, X } from "lucide-react";
 const Profilecard = ({
 	user,
 	editableUser,
+	setEditableUser,
 	handleInputChange,
 	handleEditToggle,
 	handleSave,
