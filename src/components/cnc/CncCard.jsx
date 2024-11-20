@@ -1,15 +1,16 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
 import { Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function CncCard({ cnc }) {
+	const navigate = useNavigate();
 	return (
 		<motion.div
+			onClick={() => navigate(`cnc/${cnc.id}`)}
 			whileHover={{ y: -5 }}
-			className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+			className="group cursor-pointer relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
 		>
 			<div className="relative aspect-[4/3] overflow-hidden">
 				<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/0 z-10" />
@@ -46,28 +47,6 @@ export default function CncCard({ cnc }) {
 							</Badge>
 						)}
 					</div>
-					<Button variant="outline" size="sm" asChild>
-						<Link
-							to={`/cnc/${cnc.id}`}
-							className="flex items-center"
-						>
-							View Details
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								strokeWidth={1.5}
-								stroke="currentColor"
-								className="w-4 h-4 ml-1"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-								/>
-							</svg>
-						</Link>
-					</Button>
 				</div>
 			</div>
 		</motion.div>

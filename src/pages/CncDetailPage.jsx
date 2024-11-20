@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Users, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { useEffect, useState } from "react";
-import { collection, getDoc, doc, getDocs } from "firebase/firestore";
+import {
+	collection,
+	getDoc,
+	doc,
+	getDocs,
+	updateDoc,
+} from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { motion } from "framer-motion";
 import Loading from "@/components/Loading";
+import NotFound from "@/components/not-found/NotFound";
+import { useAuth } from "@/components/contexts/AuthContext";
+import { useToast } from "@/components/hooks/use-toast";
 
 export default function CncDetailPage() {
 	const params = useParams();
 	const cncId = params.id;
+	const navigate = useNavigate();
+
+	const { toast } = useToast();
+
+	const { userData } = useAuth();
+	const isAdmin = userData?.role === "admin";
 
 	const [community, setCommunity] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +51,7 @@ export default function CncDetailPage() {
 					leader,
 					members,
 					category,
+					registrationOpen: res.data()?.registrationOpen || false,
 				});
 
 				const eventRes = await getDocs(
@@ -55,6 +71,38 @@ export default function CncDetailPage() {
 			setIsLoading(false);
 		}
 	};
+
+	const joinCommunity = async () => {
+		if (!userData) {
+			toast({
+				variant: "destructive",
+				title: "You Need to Login First!",
+			});
+			return;
+		}
+
+		try {
+			const newMembers = [
+				...community.members,
+				{
+					studentId: userData?.studentId,
+					status: "pending",
+				},
+			];
+
+			await updateDoc(doc(db, "communities", cncId), {
+				members: newMembers,
+			});
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	useEffect(() => {
+		if (isAdmin && !isLoading) {
+			navigate("/admin");
+		}
+	}, [userData]);
 
 	useEffect(() => {
 		getCommunityById();
@@ -83,7 +131,7 @@ export default function CncDetailPage() {
 	}
 
 	if (!community) {
-		return <p>Something went wrong</p>;
+		return <NotFound />;
 	}
 
 	return (
@@ -111,7 +159,13 @@ export default function CncDetailPage() {
 							members
 						</span>
 					</div>
-					<Button className="text-lg px-8 py-6">Join this CnC</Button>
+
+					<Button
+						className="text-lg px-8 py-6"
+						onClick={joinCommunity}
+					>
+						Join this CnC
+					</Button>
 				</motion.div>
 
 				<motion.div variants={itemVariants} className="mb-12">
@@ -128,7 +182,7 @@ export default function CncDetailPage() {
 					<Card className="mb-12">
 						<CardHeader>
 							<CardTitle className="text-3xl font-bold text-gray-900">
-								Upcoming Events
+								Communities Events
 							</CardTitle>
 						</CardHeader>
 						<CardContent>

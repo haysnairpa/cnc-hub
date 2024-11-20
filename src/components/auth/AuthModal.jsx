@@ -4,7 +4,14 @@ import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import {
+	collection,
+	doc,
+	getDocs,
+	query,
+	setDoc,
+	where,
+} from "firebase/firestore";
 import {
 	Dialog,
 	DialogContent,
@@ -39,6 +46,18 @@ export function AuthModal() {
 			if (isRegister) {
 				if (studentId.length < 12) {
 					setError("Student ID must be at least 12 digits");
+					return;
+				}
+
+				// Query Firestore to check if the studentId exists
+				const q = query(
+					collection(db, "users"),
+					where("studentId", "==", studentId)
+				);
+				const querySnapshot = await getDocs(q);
+
+				if (!querySnapshot.empty) {
+					setError("Student ID is already in use");
 					return;
 				}
 

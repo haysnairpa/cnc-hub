@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/Admin";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
 import { Toaster } from "@/components/ui/toaster";
+import NotFound from "@/components/not-found/NotFound";
 
 export default function App() {
 	return (
@@ -28,12 +29,14 @@ export default function App() {
 				<Route
 					path="/profile"
 					element={
-						<PrivateRoute allowedRoles={["user", "admin"]}>
+						<PrivateRoute allowedRoles={["user"]}>
 							<Profile />
 						</PrivateRoute>
 					}
 				/>
 				<Route path="/quiz" element={<Quiz />} />
+
+				<Route path="*" element={<NotFound />} />
 			</Routes>
 		</AuthProvider>
 	);

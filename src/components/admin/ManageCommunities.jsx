@@ -67,17 +67,21 @@ export function ManageCommunities() {
 
 					const membersData = await Promise.all(
 						(data.members || [])
-							.filter(member => member && member.studentId)
+							.filter((member) => member && member.studentId)
 							.map(async (member) => {
-								const memberData = await fetchCommunityMembers(member.studentId);
-								return memberData ? {
-									...memberData,
-									status: member.status || "member"
-								} : null;
+								const memberData = await fetchCommunityMembers(
+									member.studentId
+								);
+								return memberData
+									? {
+											...memberData,
+											status: member.status || "member",
+									  }
+									: null;
 							})
 					);
 
-					const validMembers = membersData.filter(m => m !== null);
+					const validMembers = membersData.filter((m) => m !== null);
 
 					return {
 						id: doc.id,
@@ -125,42 +129,32 @@ export function ManageCommunities() {
 		}
 	};
 
-	const handleApproveMember = async (communityId, memberId) => {
+	const handleApproveMember = async (communityId, studentId) => {
+		setIsLoading(true);
 		try {
 			const community = communities.find((c) => c.id === communityId);
-			const approvedMember = community.pendingMembers.find(
-				(m) => m.id === memberId
+			const memberApprovedData = community.members.find(
+				(m) => m.studentId == studentId
+			);
+			const membersWithoutApprovedMember = community.members.filter(
+				(m) => m.studentId !== studentId
 			);
 
-			const updatedCommunity = {
-				members: [
-					...(community.members || []),
-					{
-						id: approvedMember.id,
-						name: approvedMember.name,
-						email: approvedMember.email,
-					},
-				],
-				pendingMembers: community.pendingMembers.filter(
-					(m) => m.id !== memberId
-				),
-			};
+			memberApprovedData.status = "member";
 
-			await updateDoc(
-				doc(db, "communities", communityId),
-				updatedCommunity
-			);
+			const newMembers = [
+				...membersWithoutApprovedMember,
+				memberApprovedData,
+			].map((m) => ({ studentId: m.studentId, status: m.status }));
 
-			setCommunities(
-				communities.map((c) => {
-					if (c.id === communityId) {
-						return { ...c, ...updatedCommunity };
-					}
-					return c;
-				})
-			);
+			await updateDoc(doc(db, "communities", communityId), {
+				members: newMembers,
+			});
+			fetchCommunities();
 		} catch (error) {
 			console.error("Error approving member:", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 

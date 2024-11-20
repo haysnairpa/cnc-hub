@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
+import { useAuth } from "@/components/contexts/AuthContext";
 
 export default function Home() {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -17,6 +18,13 @@ export default function Home() {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const recommendedCategory = searchParams.get("recommended");
+
+	const { userData } = useAuth();
+	const isAdmin = userData?.role === "admin";
+
+	useEffect(() => {
+		if (isAdmin) navigate("/admin");
+	}, [isAdmin]);
 
 	useEffect(() => {
 		const fetchCommunities = async () => {
@@ -29,7 +37,9 @@ export default function Home() {
 					...doc.data(),
 					logo: doc.data().image,
 					shortDescription: doc.data().description,
-					memberCount: doc.data().members?.length + 1 || 0,
+					memberCount:
+						doc.data().members.filter((m) => m.status === "member")
+							.length + 1 || 0,
 					registrationOpen: doc.data()?.registrationOpen || false,
 				}));
 				setCommunities(communitiesData);
@@ -56,12 +66,23 @@ export default function Home() {
 		const matchesSearch =
 			searchQuery === "" ||
 			cnc.name.toLowerCase().includes(searchLower) ||
-			cnc.shortDescription.toLowerCase().includes(searchLower);
+			cnc.shortDescription.toLowerCase().includes(searchLower) ||
+			cnc.category?.toLowerCase().includes(searchLower);
+
+		const predefinedCategories = [
+			"technology",
+			"sports",
+			"arts",
+			"education",
+		];
 
 		const matchesCategory =
 			selectedCategory === "all" ||
 			selectedCategory === "" ||
-			cnc.category?.toLowerCase() === selectedCategory.toLowerCase();
+			(selectedCategory.toLowerCase() === "other"
+				? !predefinedCategories.includes(cnc.category?.toLowerCase())
+				: cnc.category?.toLowerCase() ===
+				  selectedCategory.toLowerCase());
 
 		return matchesSearch && matchesCategory;
 	});
@@ -86,49 +107,53 @@ export default function Home() {
 						Join the clubs and communities that align with your
 						interests and talents at our university
 					</p>
-					<div className="flex flex-col items-center gap-8 pt-4">
-						<Button
-							size="lg"
-							onClick={scrollToContent}
-							className="text-base px-8 py-6"
-						>
-							Bring me
-						</Button>
-						<motion.button
-							onClick={scrollToContent}
-							animate={{ y: [0, 10, 0] }}
-							transition={{ repeat: Infinity, duration: 1.5 }}
-							className="text-muted-foreground hover:text-foreground transition-colors"
-							aria-label="Scroll to content"
-						>
-							<ArrowDown size={24} />
-						</motion.button>
-					</div>
+					{!isAdmin && (
+						<div className="flex flex-col items-center gap-8 pt-4">
+							<Button
+								size="lg"
+								onClick={scrollToContent}
+								className="text-base px-8 py-6"
+							>
+								Bring me
+							</Button>
+							<motion.button
+								onClick={scrollToContent}
+								animate={{ y: [0, 10, 0] }}
+								transition={{ repeat: Infinity, duration: 1.5 }}
+								className="text-muted-foreground hover:text-foreground transition-colors"
+								aria-label="Scroll to content"
+							>
+								<ArrowDown size={24} />
+							</motion.button>
+						</div>
+					)}
 				</motion.div>
 			</WavyBackground>
 
-			<main className="flex-1">
-				<div className="container mx-auto px-4 py-16 space-y-16 max-w-[1600px]">
-					<SearchBar
-						onSearch={setSearchQuery}
-						onCategoryChange={setSelectedCategory}
-					/>
+			{!isAdmin && (
+				<main className="flex-1">
+					<div className="container mx-auto px-4 py-16 space-y-16 max-w-[1600px]">
+						<SearchBar
+							onSearch={setSearchQuery}
+							onCategoryChange={setSelectedCategory}
+						/>
 
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.5 }}
-						className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-					>
-						{filteredCncs.map((cnc) => (
-							<CncCard key={cnc.id} cnc={cnc} />
-						))}
-					</motion.div>
-				</div>
-			</main>
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.5 }}
+							className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+						>
+							{filteredCncs.map((cnc) => (
+								<CncCard key={cnc.id} cnc={cnc} />
+							))}
+						</motion.div>
+					</div>
+				</main>
+			)}
 
-			<Footer />
+			{!isAdmin && <Footer />}
 		</div>
 	);
 }

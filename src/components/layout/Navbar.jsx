@@ -29,7 +29,10 @@ export function Navbar() {
 			)}
 		>
 			<div className="container mx-auto px-4 h-16 flex items-center justify-between">
-				<Link to="/" className="font-bold text-xl">
+				<Link
+					to={userData?.role === "admin" ? "/admin" : "/"}
+					className="font-bold text-xl"
+				>
 					CnC Hub
 				</Link>
 				<AuthModal profileLink={profileLink} />
