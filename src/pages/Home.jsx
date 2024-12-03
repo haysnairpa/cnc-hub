@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/components/contexts/AuthContext";
+import { getRecommendations } from "@/utils/recommender";
 
 export default function Home() {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -26,40 +27,50 @@ export default function Home() {
 		if (isAdmin) navigate("/admin");
 	}, [isAdmin]);
 
+	const fetchRecommendations = async () => {
+		try {
+			const userPreferences = JSON.parse(localStorage.getItem('userPreferences'));
+			if (!userPreferences) return;
+
+			const querySnapshot = await getDocs(collection(db, "communities"));
+			const allCommunities = querySnapshot.docs.map(doc => ({
+				id: doc.id,
+				...doc.data(),
+				logo: doc.data().image,
+				shortDescription: doc.data().description,
+				memberCount: doc.data().members.filter((m) => m.status === "member").length + 1 || 0,
+				registrationOpen: doc.data()?.registrationOpen || false,
+			}));
+
+			const recommendedCommunities = getRecommendations(userPreferences, allCommunities);
+			
+			setCommunities(recommendedCommunities);
+			
+		} catch (error) {
+			console.error("Error fetching recommendations:", error);
+		}
+	};
+
 	useEffect(() => {
-		const fetchCommunities = async () => {
-			try {
-				const querySnapshot = await getDocs(
-					collection(db, "communities")
-				);
+		const init = async () => {
+			if (searchParams.get('recommended')) {
+				await fetchRecommendations();
+			} else {
+				const querySnapshot = await getDocs(collection(db, "communities"));
 				const communitiesData = querySnapshot.docs.map((doc) => ({
 					id: doc.id,
 					...doc.data(),
 					logo: doc.data().image,
 					shortDescription: doc.data().description,
-					memberCount:
-						doc.data().members.filter((m) => m.status === "member")
-							.length + 1 || 0,
+					memberCount: doc.data().members.filter((m) => m.status === "member").length + 1 || 0,
 					registrationOpen: doc.data()?.registrationOpen || false,
 				}));
 				setCommunities(communitiesData);
-			} catch (error) {
-				console.log("Error fetching communities:", error);
 			}
 		};
 
-		fetchCommunities();
-	}, []);
-
-	useEffect(() => {
-		if (recommendedCategory) {
-			setSelectedCategory(recommendedCategory);
-			window.scrollTo({
-				top: window.innerHeight,
-				behavior: "smooth",
-			});
-		}
-	}, [recommendedCategory]);
+		init();
+	}, [searchParams]);
 
 	const filteredCncs = communities.filter((cnc) => {
 		const searchLower = searchQuery.toLowerCase();

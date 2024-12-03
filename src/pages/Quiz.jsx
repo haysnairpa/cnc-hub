@@ -8,30 +8,78 @@ const questions = [
     id: 1,
     question: "What do you like the most?",
     options: [
-      { text: "Technology & Programming", category: "Technology" },
-      { text: "Arts & Creativity", category: "Arts & Media" },
-      { text: "Sports & Physical Activities", category: "Sports" },
-      { text: "Learning & Research", category: "Academic" }
+      { 
+        text: "Technology & Programming", 
+        category: "Technology",
+        keywords: ["coding", "programming", "technical", "computer", "software", "development"]
+      },
+      { 
+        text: "Arts & Creativity", 
+        category: "Arts & Media",
+        keywords: ["creative", "design", "art", "media", "visual", "expression"] 
+      },
+      { 
+        text: "Sports & Physical Activities", 
+        category: "Sports",
+        keywords: ["sports", "fitness", "athletic", "physical", "team", "competition"]
+      },
+      { 
+        text: "Learning & Research", 
+        category: "Academic",
+        keywords: ["research", "study", "academic", "learning", "knowledge", "education"]
+      }
     ]
   },
   {
     id: 2,
     question: "How do you spend your free time?",
     options: [
-      { text: "Creating/Learning technical things", category: "Technology" },
-      { text: "Being creative & expressing myself", category: "Arts & Media" },
-      { text: "Exercising & being active", category: "Sports" },
-      { text: "Reading & learning new things", category: "Academic" }
+      { 
+        text: "Creating/Learning technical things",
+        category: "Technology",
+        keywords: ["learning", "technical", "building", "problem-solving", "innovation"]
+      },
+      { 
+        text: "Being creative & expressing myself",
+        category: "Arts & Media",
+        keywords: ["creativity", "expression", "artistic", "imagination", "creation"]
+      },
+      { 
+        text: "Exercising & being active",
+        category: "Sports",
+        keywords: ["exercise", "active", "physical", "outdoor", "energy"]
+      },
+      { 
+        text: "Reading & learning new things",
+        category: "Academic",
+        keywords: ["reading", "learning", "discovery", "knowledge", "study"]
+      }
     ]
   },
   {
-    id: 3,
+    id: 3, 
     question: "What's your main goal in joining CnC?",
     options: [
-      { text: "Develop technical skills", category: "Technology" },
-      { text: "Express creativity", category: "Arts & Media" },
-      { text: "Improve fitness", category: "Sports" },
-      { text: "Deepen knowledge", category: "Academic" }
+      { 
+        text: "Develop technical skills",
+        category: "Technology",
+        keywords: ["skills", "technical", "development", "practical", "expertise"]
+      },
+      { 
+        text: "Express creativity",
+        category: "Arts & Media",
+        keywords: ["expression", "creative", "portfolio", "artistic", "showcase"]
+      },
+      { 
+        text: "Improve fitness",
+        category: "Sports",
+        keywords: ["fitness", "health", "improvement", "physical", "training"]
+      },
+      { 
+        text: "Deepen knowledge",
+        category: "Academic",
+        keywords: ["knowledge", "learning", "research", "academic", "expertise"]
+      }
     ]
   }
 ]
@@ -41,23 +89,37 @@ export default function Quiz() {
   const [answers, setAnswers] = useState([])
   const navigate = useNavigate()
 
-  const handleAnswer = (category) => {
-    const newAnswers = [...answers, category]
+  const handleAnswer = (option) => {
+    const newAnswers = [...answers, {
+      category: option.category,
+      keywords: option.keywords
+    }]
     setAnswers(newAnswers)
 
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1)
     } else {
-      // Itung kategori yg banyak dipilih
+      // Proses jawaban untuk mendapatkan preferensi
       const categoryCount = newAnswers.reduce((acc, curr) => {
-        acc[curr] = (acc[curr] || 0) + 1
+        acc[curr.category] = (acc[curr.category] || 0) + 1
         return acc
       }, {})
-      
-      const recommendedCategory = Object.entries(categoryCount)
-        .sort((a, b) => b[1] - a[1])[0][0]
 
-      navigate(`/?recommended=${recommendedCategory}`)
+      // Gabungkan semua keywords
+      const allKeywords = newAnswers.flatMap(a => a.keywords)
+      
+      const userPreferences = {
+        category: Object.entries(categoryCount)
+          .sort((a, b) => b[1] - a[1])[0][0],
+        keywords: allKeywords,
+        interests: [...new Set(allKeywords)], // unique keywords
+        answeredAt: new Date()
+      }
+
+      // Simpan ke localStorage
+      localStorage.setItem('userPreferences', JSON.stringify(userPreferences))
+      
+      navigate(`/?recommended=true`)
     }
   }
 
@@ -81,9 +143,9 @@ export default function Quiz() {
           {questions[currentQuestion].options.map((option, index) => (
             <Button
               key={index}
-              variant="outline"
+              variant="outline" 
               className="p-8 text-lg justify-start h-auto"
-              onClick={() => handleAnswer(option.category)}
+              onClick={() => handleAnswer(option)}
             >
               {option.text}
             </Button>
