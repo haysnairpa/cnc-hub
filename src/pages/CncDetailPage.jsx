@@ -2,7 +2,7 @@
 
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Calendar, MapPin, Check, Loader2, X, UserPlus } from "lucide-react";
+import { ArrowLeft, Users, Calendar, MapPin, Check, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
@@ -34,6 +34,7 @@ export default function CncDetailPage() {
 
 	const [community, setCommunity] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
+
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [membershipStatus, setMembershipStatus] = useState("not_member");
 
