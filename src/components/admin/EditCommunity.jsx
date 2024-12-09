@@ -150,7 +150,6 @@ export default function EditCommunity({ communityId, initialData }) {
 				updatedAt: new Date(),
 			};
 
-			console.log("communityData", communityData);
 			await updateDoc(communityRef, communityData);
 
 			const existingEventIds = initialEvents
