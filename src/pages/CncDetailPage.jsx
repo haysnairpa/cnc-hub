@@ -2,7 +2,7 @@
 
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Calendar, MapPin, Check, Loader2, X } from "lucide-react";
+import { ArrowLeft, Users, Calendar, MapPin, Check, Loader2, X, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
@@ -34,6 +34,7 @@ export default function CncDetailPage() {
 
 	const [community, setCommunity] = useState(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isUpdating, setIsUpdating] = useState(false);
 	const [membershipStatus, setMembershipStatus] = useState("not_member");
 
 	const getCommunityById = async () => {
@@ -75,37 +76,48 @@ export default function CncDetailPage() {
 
 	const joinCommunity = async () => {
 		if (!userData) {
-			toast({
-				variant: "destructive",
-				title: "You Need to Login First!",
-			});
-			return;
+		  toast({
+			variant: "destructive",
+			title: "You Need to Login First!",
+		  });
+		  return;
 		}
-
+	
+		setIsUpdating(true);
 		try {
-			const newMembers = [
-				...community.members,
-				{
-					studentId: userData?.studentId,
-					status: "pending",
-				},
+		  let newMembers;
+		  if (membershipStatus === "not_member") {
+			newMembers = [
+			  ...community.members,
+			  {
+				studentId: userData.studentId,
+				status: "pending",
+			  },
 			];
-
-			await updateDoc(doc(db, "communities", cncId), {
-				members: newMembers,
-			});
-
-			
-			setCommunity(prev => ({ ...prev, members: newMembers }));
-			setMembershipStatus(membershipStatus === "not_member" ? "pending" : "not_member");
-	  
-			toast({
-			  title: membershipStatus === "not_member" ? "Join request sent!" : "Join request cancelled",
-			});
+		  } else if (membershipStatus === "pending") {
+			newMembers = community.members.filter(member => member.studentId !== userData.studentId);
+		  }
+	
+		  await updateDoc(doc(db, "communities", cncId), {
+			members: newMembers,
+		  });
+	
+		  setCommunity(prev => ({ ...prev, members: newMembers }));
+		  setMembershipStatus(membershipStatus === "not_member" ? "pending" : "not_member");
+	
+		  toast({
+			title: membershipStatus === "not_member" ? "Join request sent!" : "Join request cancelled",
+		  });
 		} catch (error) {
-			console.log(error);
+		  console.log(error);
+		  toast({
+			variant: "destructive",
+			title: "Error updating membership",
+		  });
+		} finally {
+		  setIsUpdating(false);
 		}
-	};
+	  };
 
 	useEffect(() => {
 		if (isAdmin && !isLoading) {
