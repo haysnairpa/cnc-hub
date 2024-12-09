@@ -66,13 +66,15 @@ export function getRecommendations(userPreferences, communities) {
         Object.keys(doc).forEach(term => allTerms.add(term));
     });
     
-    // Convert user preferences to vector with same vocabulary
-    const userTerms = preprocessText(
-        `${userPreferences.interests.join(' ')} ${userPreferences.category}`
-    );
-    
+    // Update perhitungan userVector dengan mempertimbangkan bobot
+    const userTermsWithWeight = userPreferences.keywords.reduce((acc, keyword, idx) => {
+        const weight = idx >= userPreferences.keywords.length - 3 ? 1.5 : 1; // Bobot lebih untuk jawaban terakhir
+        acc[keyword] = (acc[keyword] || 0) + weight;
+        return acc;
+    }, {});
+
     const userVector = Array.from(allTerms).map(term => 
-        userTerms.includes(term) ? 1 : 0
+        userTermsWithWeight[term] || 0
     );
 
     const recommendations = communities.map((community, idx) => {
@@ -84,7 +86,7 @@ export function getRecommendations(userPreferences, communities) {
         const features = {
             contentSimilarity: cosineSimilarity(communityVector, userVector),
             categoryMatch: userPreferences.category.toLowerCase() === 
-                         community.category?.toLowerCase() ? 1 : 0,
+                         community.category?.toLowerCase() ? 1.5 : 0, // Bobot kategori dinaikkan
             memberScore: community.members?.length / 
                        Math.max(...communities.map(c => c.members?.length || 0)),
             activityScore: (community.events?.length || 0) / 
@@ -92,17 +94,20 @@ export function getRecommendations(userPreferences, communities) {
         };
 
         const score = (
-            features.contentSimilarity * 0.4 +
-            features.categoryMatch * 0.3 +
+            features.contentSimilarity * 0.35 +
+            features.categoryMatch * 0.35 +    // Bobot kategori dinaikkan
             features.memberScore * 0.2 +
             features.activityScore * 0.1
         );
 
         return {
             ...community,
-            similarityScore: score
+            similarityScore: score,
+            matchDetails: features  // Tambahkan detail matching untuk transparansi
         };
-    });
+    })
+    .filter(community => community.similarityScore > 0.2)
+    .sort((a, b) => b.similarityScore - a.similarityScore);
 
-    return recommendations.sort((a, b) => b.similarityScore - a.similarityScore);
+    return recommendations;
 }
