@@ -43,7 +43,7 @@ export default function EditCommunity({ communityId, initialData }) {
 	const [image, setImage] = useState(null);
 	const [imagePreview, setImagePreview] = useState(initialData.image || null);
 	const [leaderStudentId, setLeaderStudentId] = useState(
-		initialData.leader || ""
+		initialData.leader.studentId || ""
 	);
 
 	const [members, setMembers] = useState(initialData.members || []);
