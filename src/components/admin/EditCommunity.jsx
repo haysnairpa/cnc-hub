@@ -43,7 +43,7 @@ export default function EditCommunity({ communityId, initialData }) {
 	const [image, setImage] = useState(null);
 	const [imagePreview, setImagePreview] = useState(initialData.image || null);
 	const [leaderStudentId, setLeaderStudentId] = useState(
-		initialData.leader || ""
+		initialData.leader.studentId || ""
 	);
 
 	const [members, setMembers] = useState(initialData.members || []);
@@ -150,7 +150,6 @@ export default function EditCommunity({ communityId, initialData }) {
 				updatedAt: new Date(),
 			};
 
-			console.log("communityData", communityData);
 			await updateDoc(communityRef, communityData);
 
 			const existingEventIds = initialEvents
