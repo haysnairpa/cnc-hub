@@ -8,7 +8,7 @@ export default function CncCard({ cnc }) {
 	const navigate = useNavigate();
 	return (
 		<motion.div
-			onClick={() => navigate(`cnc/${cnc.id}`)}
+			onClick={() => navigate(`/cnc/${cnc.id}`)}
 			whileHover={{ y: -5 }}
 			className="group cursor-pointer relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
 		>

@@ -2,7 +2,7 @@
 
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Calendar, MapPin, Check, Loader2, X } from "lucide-react";
+import { ArrowLeft, Users, Calendar, MapPin, Check, Loader2, X, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/layout/Footer";
@@ -77,48 +77,53 @@ export default function CncDetailPage() {
 
 	const joinCommunity = async () => {
 		if (!userData) {
-		  toast({
-			variant: "destructive",
-			title: "You Need to Login First!",
-		  });
-		  return;
+			toast({
+				variant: "destructive",
+				title: "You Need to Login First!",
+			});
+			return;
 		}
-	
+
+		if (!community.registrationOpen) {
+			toast({ variant: "destructive", title: "This communities doesn't open a registration" })
+			return;
+		}
+
 		setIsUpdating(true);
 		try {
-		  let newMembers;
-		  if (membershipStatus === "not_member") {
-			newMembers = [
-			  ...community.members,
-			  {
-				studentId: userData.studentId,
-				status: "pending",
-			  },
-			];
-		  } else if (membershipStatus === "pending") {
-			newMembers = community.members.filter(member => member.studentId !== userData.studentId);
-		  }
-	
-		  await updateDoc(doc(db, "communities", cncId), {
-			members: newMembers,
-		  });
-	
-		  setCommunity(prev => ({ ...prev, members: newMembers }));
-		  setMembershipStatus(membershipStatus === "not_member" ? "pending" : "not_member");
-	
-		  toast({
-			title: membershipStatus === "not_member" ? "Join request sent!" : "Join request cancelled",
-		  });
+			let newMembers;
+			if (membershipStatus === "not_member") {
+				newMembers = [
+					...community.members,
+					{
+						studentId: userData.studentId,
+						status: "pending",
+					},
+				];
+			} else if (membershipStatus === "pending") {
+				newMembers = community.members.filter(member => member.studentId !== userData.studentId);
+			}
+
+			await updateDoc(doc(db, "communities", cncId), {
+				members: newMembers,
+			});
+
+			setCommunity(prev => ({ ...prev, members: newMembers }));
+			setMembershipStatus(membershipStatus === "not_member" ? "pending" : "not_member");
+
+			toast({
+				title: membershipStatus === "not_member" ? "Join request sent!" : "Join request cancelled",
+			});
 		} catch (error) {
-		  console.log(error);
-		  toast({
-			variant: "destructive",
-			title: "Error updating membership",
-		  });
+			console.log(error);
+			toast({
+				variant: "destructive",
+				title: "Error updating membership",
+			});
 		} finally {
-		  setIsUpdating(false);
+			setIsUpdating(false);
 		}
-	  };
+	};
 
 	useEffect(() => {
 		if (isAdmin && !isLoading) {
@@ -132,14 +137,14 @@ export default function CncDetailPage() {
 
 	useEffect(() => {
 		if (community && userData) {
-		  const userMembership = community.members.find(member => member.studentId === userData.studentId);
-		  if (userMembership) {
-			setMembershipStatus(userMembership.status);
-		  } else {
-			setMembershipStatus("not_member");
-		  }
+			const userMembership = community.members.find(member => member.studentId === userData.studentId);
+			if (userMembership) {
+				setMembershipStatus(userMembership.status);
+			} else {
+				setMembershipStatus("not_member");
+			}
 		}
-	  }, [community, userData]);
+	}, [community, userData]);
 
 	const containerVariants = {
 		hidden: { opacity: 0 },
@@ -194,31 +199,31 @@ export default function CncDetailPage() {
 					</div>
 
 					{membershipStatus === "member" && (
-        <Button className="text-lg px-8 py-6" variant="secondary" disabled>
-          <Check className="mr-2 h-5 w-5" />
-          You're a member
-        </Button>
-      )}
-      {membershipStatus === "pending" && (
-        <Button className="text-lg px-8 py-6" variant="outline" onClick={joinCommunity} disabled={isUpdating}>
-          {isUpdating ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <X className="mr-2 h-5 w-5" />
-          )}
-          Cancel join request
-        </Button>
-      )}
-      {membershipStatus === "not_member" && (
-        <Button className="text-lg px-8 py-6" onClick={joinCommunity} disabled={isUpdating}>
-          {isUpdating ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <UserPlus className="mr-2 h-5 w-5" />
-          )}
-          Join this CnC
-        </Button>
-      )}
+						<Button className="text-lg px-8 py-6" variant="secondary" disabled>
+							<Check className="mr-2 h-5 w-5" />
+							You're a member
+						</Button>
+					)}
+					{membershipStatus === "pending" && (
+						<Button className="text-lg px-8 py-6" variant="outline" onClick={joinCommunity} disabled={isUpdating}>
+							{isUpdating ? (
+								<Loader2 className="mr-2 h-5 w-5 animate-spin" />
+							) : (
+								<X className="mr-2 h-5 w-5" />
+							)}
+							Cancel join request
+						</Button>
+					)}
+					{membershipStatus === "not_member" && (
+						<Button className="text-lg px-8 py-6" onClick={joinCommunity} disabled={isUpdating}>
+							{isUpdating ? (
+								<Loader2 className="mr-2 h-5 w-5 animate-spin" />
+							) : (
+								<UserPlus className="mr-2 h-5 w-5" />
+							)}
+							Join this CnC
+						</Button>
+					)}
 
 				</motion.div>
 
